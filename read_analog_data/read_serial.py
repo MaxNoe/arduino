@@ -8,6 +8,7 @@ Options:
     --buffer=<N>     How many entries to buffer before replotting [default: 20]
     --storage=<N>    How many entries to store in total [default: 1000]
     --interval=<N>   Update interval for the plot in milliseconds, [default: 5]
+    --out=<file>     Outputfile
 '''
 
 from matplotlib.style import use
@@ -20,64 +21,86 @@ import matplotlib.animation as ani
 import serial
 import numpy as np
 import time
+import json
 from docopt import docopt
 
+def init_plot():
+    fig, ax = plt.subplots()
+    ax.autoscale(False)
 
-args = docopt(__doc__)
+    adc_curve, = ax.plot([],[], '-', label='A0')
+    ax.set_ylim(-50, 1100)
+    ax.set_yticks([0, 256, 512, 768, 1024])
+    ax.set_ylabel(r'adc value')
+    ax.set_xlabel('$t$ / s')
+    ax.legend(bbox_to_anchor=(0.5, 1.02), loc='center')
+    ax.grid()
+    fig.tight_layout()
 
-buffer_size = int(args['--buffer'])
-storage_size = int(args['--storage'])
-interval = int(args['--interval'])
+    return fig, ax, adc_curve
 
-try:
-    arduino = serial.Serial(args['<device>'], args['<baud>'])
-except Exception as e:
-    raise IOError('connection to arduino failed with error: \n\n', e)
-
-time.sleep(1)
-
-fig, ax = plt.subplots()
-ax.autoscale(False)
-
-voltage_curve, = ax.plot([],[], '-', label='A0')
-ax.set_ylim(-50, 1100)
-ax.set_yticks([0, 256, 512, 768, 1024])
-ax.set_ylabel(r'adc value')
-ax.set_xlabel('$t$ / s')
-ax.legend(bbox_to_anchor=(0.5, 1.02), loc='center')
-ax.grid()
-fig.tight_layout()
-
-ts = []
-signal = []
-
-def read():
+def read(output=None):
     global ts, signal
+
     try:
-        line = arduino.readline()
-    except:
-        print('could not readline from arduino')
-    try:
-        t, voltage = line.decode().split(',')
-        voltage = float(voltage)
-        t = float(t)/1000
-        if len(signal) < storage_size:
-            signal.append(voltage)
-            ts.append(t)
-        else:
-            signal[:-1] = signal[1:]
-            signal[-1] = voltage
-            ts[:-1] = ts[1:]
-            ts[-1] = t
-    except:
-        print('skipped invalid value')
+        line = arduino.readline().decode('ascii')
+        data = json.loads(line)
+        t = data['t'] / 1000
+        adc = data['adc']
+
+    except Exception as e:
+        print(e)
+        return None
+
+    if len(signal) < storage_size:
+        signal.append(adc)
+        ts.append(t)
+    else:
+        signal[:-1] = signal[1:]
+        signal[-1] = adc
+        ts[:-1] = ts[1:]
+        ts[-1] = t
+
+    if output is not None:
+        output.write("{:04.3f}\t{:4d}\n".format(t, adc))
 
 def updatefig(x):
     for i in range(buffer_size):
         read()
-    voltage_curve.set_data(ts, signal)
+    adc_curve.set_data(ts, signal)
     if len(ts)>2:
-        ax.set_xlim(max(0, ts[0]), ts[-1]+0.5)
+        ax.set_xlim(ts[0], ts[-1] + 0.1 * (ts[-1] - ts[0]))
 
-ani = ani.FuncAnimation(fig, updatefig, interval=interval)
-plt.show()
+    return adc_curve
+
+if __name__ == '__main__':
+    args = docopt(__doc__)
+
+    buffer_size = int(args['--buffer'])
+    storage_size = int(args['--storage'])
+    interval = int(args['--interval'])
+
+    try:
+        arduino = serial.Serial(args['<device>'], args['<baud>'])
+        # read the first lines to get rid of junk before restart
+    except Exception as e:
+        raise IOError('connection to arduino failed with error: \n\n', e)
+
+    time.sleep(1)
+
+    fig, ax, adc_curve = init_plot()
+    ts = []
+    signal = []
+
+    if args['--out'] is not None:
+        output = open(args['--out'], 'w')
+        output.write('#t/s\tADC/a.u.\n')
+    else:
+        output = None
+
+    try:
+        ani = ani.FuncAnimation(fig, updatefig, interval=interval)
+        plt.show()
+    except KeyboardInterrupt:
+        if output is not None:
+            output.close()
