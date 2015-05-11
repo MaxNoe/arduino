@@ -9,6 +9,7 @@ Options:
     --storage=<N>    How many entries to store in total [default: 1000]
     --interval=<N>   Update interval for the plot in milliseconds, [default: 5]
     --out=<file>     Outputfile
+    --skiplines=<N>  how many lines to skip before starting plot [default: 20]
 '''
 
 from matplotlib.style import use
@@ -28,7 +29,7 @@ def init_plot():
     fig, ax = plt.subplots()
     ax.autoscale(False)
 
-    adc_curve, = ax.plot([],[], '-', label='A0')
+    adc_curve, = ax.plot([],[], ',', label='A0')
     ax.set_ylim(-50, 1100)
     ax.set_yticks([0, 256, 512, 768, 1024])
     ax.set_ylabel(r'adc value')
@@ -66,12 +67,13 @@ def read(output=None):
 
 def updatefig(x):
     for i in range(buffer_size):
-        read()
+        read(output)
     adc_curve.set_data(ts, signal)
     if len(ts)>2:
         ax.set_xlim(ts[0], ts[-1] + 0.1 * (ts[-1] - ts[0]))
 
     return adc_curve
+
 
 if __name__ == '__main__':
     args = docopt(__doc__)
@@ -79,6 +81,7 @@ if __name__ == '__main__':
     buffer_size = int(args['--buffer'])
     storage_size = int(args['--storage'])
     interval = int(args['--interval'])
+    num_skip = int(args['--skiplines'])
 
     try:
         arduino = serial.Serial(args['<device>'], args['<baud>'])
@@ -86,7 +89,8 @@ if __name__ == '__main__':
     except Exception as e:
         raise IOError('connection to arduino failed with error: \n\n', e)
 
-    time.sleep(1)
+    for i in range(num_skip):
+        _ = arduino.readline(20)
 
     fig, ax, adc_curve = init_plot()
     ts = []
