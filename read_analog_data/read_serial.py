@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 '''
 this script reads and plots data from an arduino through serial port
 Usage:
@@ -9,9 +9,9 @@ Options:
     --storage=<N>    How many entries to store in total [default: 1000]
     --interval=<N>   Update interval for the plot in milliseconds, [default: 5]
     --out=<file>     Outputfile
-    --skiplines=<N>  how many lines to skip before starting plot [default: 20]
+    --skiplines=<N>  how many lines to skip before starting plot [default: 100]
 '''
-
+from __future__ import division, print_function
 from matplotlib.style import use
 
 use('dark_background')
@@ -20,16 +20,15 @@ use('matplotlibrc')
 import matplotlib.pyplot as plt
 import matplotlib.animation as ani
 import serial
-import numpy as np
-import time
-import json
 from docopt import docopt
+from adcvalues_pb2 import SerialData
+
 
 def init_plot():
     fig, ax = plt.subplots()
     ax.autoscale(False)
 
-    adc_curve, = ax.plot([],[], '-', label='A0')
+    adc_curve, = ax.plot([], [], '-', label='A0')
     ax.set_ylim(-50, 1100)
     ax.set_yticks([0, 256, 512, 768, 1024])
     ax.set_ylabel(r'adc value')
@@ -41,32 +40,6 @@ def init_plot():
     return fig, ax, adc_curve
 
 
-def read(output=None):
-    global ts, signal
-
-    try:
-        line = arduino.readline().decode('ascii')
-        data = json.loads(line)
-        t = data['t'] / 1000
-        adc = data['adc']
-
-    except Exception as e:
-        print(e)
-        return None
-
-    if len(signal) < storage_size:
-        signal.append(adc)
-        ts.append(t)
-    else:
-        signal[:-1] = signal[1:]
-        signal[-1] = adc
-        ts[:-1] = ts[1:]
-        ts[-1] = t
-
-    if output is not None:
-        output.write("{:04.3f}\t{:4d}\n".format(t, adc))
-
-
 def updatefig(x):
     for i in range(buffer_size):
         read(output)
@@ -76,6 +49,32 @@ def updatefig(x):
 
     return adc_curve
 
+
+def read(output=None):
+    global ts, signal
+    data = SerialData()
+    try:
+        line = arduino.readline().rstrip()
+    except:
+        print('could not readline from arduino')
+    try:
+        data.ParseFromString(line)
+        t = data.time / 1000
+        adcvalue = data.adcvalue
+        if len(signal) < storage_size:
+            signal.append(adcvalue)
+            ts.append(t)
+        else:
+            signal[:-1] = signal[1:]
+            signal[-1] = adcvalue
+            ts[:-1] = ts[1:]
+            ts[-1] = t
+
+        if output is not None:
+            output.write("{:04.3f}\t{:4d}\n".format(t, adcvalue))
+
+    except Exception as e:
+        print(e)
 
 if __name__ == '__main__':
     args = docopt(__doc__)

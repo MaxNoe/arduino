@@ -1,0 +1,5 @@
+message SerialData {
+  required uint64 time = 1;
+  required uint32 unixtime = 2;
+  required uint32 adcvalue = 3;
+}
