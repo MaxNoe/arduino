@@ -7,7 +7,7 @@ Usage:
 Options:
     --buffer=<N>     How many entries to buffer before replotting [default: 20]
     --storage=<N>    How many entries to store in total [default: 1000]
-    --interval=<N>   Update interval for the plot in milliseconds, [default: 5]
+    --interval=<N>   Update interval for the plot in milliseconds, [default: 10]
     --out=<file>     Outputfile
     --skiplines=<N>  how many lines to skip before starting plot [default: 100]
 '''
@@ -22,6 +22,8 @@ import matplotlib.animation as ani
 import serial
 from docopt import docopt
 from adcvalues_pb2 import SerialData
+from ringbuffer import Buffer
+import numpy as np
 
 
 def init_plot():
@@ -43,9 +45,12 @@ def init_plot():
 def updatefig(x):
     for i in range(buffer_size):
         read(output)
-    adc_curve.set_data(ts, signal)
+    mask = ~np.isnan(ts.data)
+    adc_curve.set_data(ts.data[mask], signal.data[mask])
     if len(ts) > 2:
-        ax.set_xlim(ts[0], ts[-1] + 0.1 * (ts[-1] - ts[0]))
+        lower = ts[mask][0]
+        upper = ts[mask][-1]
+        ax.set_xlim(lower, upper + 0.1 * (upper - lower))
 
     return adc_curve
 
@@ -61,17 +66,12 @@ def read(output=None):
         data.ParseFromString(line)
         t = data.time / 1000
         adcvalue = data.adcvalue
-        if len(signal) < storage_size:
-            signal.append(adcvalue)
-            ts.append(t)
-        else:
-            signal[:-1] = signal[1:]
-            signal[-1] = adcvalue
-            ts[:-1] = ts[1:]
-            ts[-1] = t
+
+        signal.fill(adcvalue)
+        ts.fill(t)
 
         if output is not None:
-            output.write("{:04.3f}\t{:4d}\n".format(t, adcvalue))
+            output.write("{:1.3f},{:d}\n".format(t, adcvalue))
 
     except Exception as e:
         print(e)
@@ -94,12 +94,12 @@ if __name__ == '__main__':
         _ = arduino.readline(20)
 
     fig, ax, adc_curve = init_plot()
-    ts = []
-    signal = []
+    ts = Buffer(storage_size)
+    signal = Buffer(storage_size)
 
     if args['--out'] is not None:
         output = open(args['--out'], 'w')
-        output.write('#t/s\tADC/a.u.\n')
+        output.write('t,ADC0\n')
     else:
         output = None
 

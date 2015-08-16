@@ -1,10 +1,12 @@
 import numpy as np
 
+
 class Buffer():
     "A 1D ring buffer using numpy arrays"
     def __init__(self, length, dtype=float, empty=np.nan):
         self.data = np.empty(length, dtype=dtype)
-        self.data[:] = empty
+        if empty is not None:
+            self.data[:] = empty
 
     def fill(self, new_data):
         new_data = np.array(new_data, copy=False, ndmin=1)
@@ -14,11 +16,6 @@ class Buffer():
         self.data[:-n_new] = self.data[n_new:]
         # add new data to end of array
         self.data[-n_new:] = new_data
-
-    def get(self):
-        "Returns the first-in-first-out data in the ring buffer"
-        idx = (self.index + np.arange(self.data.size)) % self.data.size
-        return self.data[idx]
 
     def __repr__(self):
         return self.data.__repr__()
