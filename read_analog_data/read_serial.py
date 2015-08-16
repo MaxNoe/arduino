@@ -29,7 +29,7 @@ def init_plot():
     fig, ax = plt.subplots()
     ax.autoscale(False)
 
-    adc_curve, = ax.plot([],[], ',', label='A0')
+    adc_curve, = ax.plot([],[], '-', label='A0')
     ax.set_ylim(-50, 1100)
     ax.set_yticks([0, 256, 512, 768, 1024])
     ax.set_ylabel(r'adc value')
@@ -39,6 +39,7 @@ def init_plot():
     fig.tight_layout()
 
     return fig, ax, adc_curve
+
 
 def read(output=None):
     global ts, signal
@@ -65,11 +66,12 @@ def read(output=None):
     if output is not None:
         output.write("{:04.3f}\t{:4d}\n".format(t, adc))
 
+
 def updatefig(x):
     for i in range(buffer_size):
         read(output)
     adc_curve.set_data(ts, signal)
-    if len(ts)>2:
+    if len(ts) > 2:
         ax.set_xlim(ts[0], ts[-1] + 0.1 * (ts[-1] - ts[0]))
 
     return adc_curve
@@ -85,10 +87,10 @@ if __name__ == '__main__':
 
     try:
         arduino = serial.Serial(args['<device>'], args['<baud>'])
-        # read the first lines to get rid of junk before restart
     except Exception as e:
         raise IOError('connection to arduino failed with error: \n\n', e)
 
+    # read the first lines to get rid of junk before restart
     for i in range(num_skip):
         _ = arduino.readline(20)
 
