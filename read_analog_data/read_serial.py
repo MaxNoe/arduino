@@ -5,9 +5,9 @@ Usage:
     read_analog_data <device> <baud> [options]
 
 Options:
-    --buffer=<N>     How many entries to buffer before replotting [default: 20]
-    --storage=<N>    How many entries to store in total [default: 1000]
-    --interval=<N>   Update interval for the plot in milliseconds, [default: 10]
+    --buffer=<N>     How many entries to buffer before replotting [default: 50]
+    --storage=<N>    How many entries to store in total [default: 5000]
+    --interval=<N>   Update interval for the plot in milliseconds, [default: 20]
     --out=<file>     Outputfile
     --skiplines=<N>  how many lines to skip before starting plot [default: 100]
 '''
