@@ -58,13 +58,22 @@ def updatefig(x):
 def read(output=None):
     global ts, signal
     data = SerialData()
-    try:
-        line = arduino.readline().rstrip()
-    except:
-        print('could not readline from arduino')
-    try:
-        data.ParseFromString(line)
+    success = False
+    while not success:
+        try:
+            line = arduino.readline().rstrip()
+        except:
+            print('could not readline from arduino')
+        try:
+            data.ParseFromString(line)
+            success = True
+        except Exception as e:
+            line = arduino.readline().rstrip()
+            print(e)
+    else:
         t = data.time / 1000
+        if t == 0:
+            return
         adcvalue = data.adcvalue
 
         signal.fill(adcvalue)
@@ -73,8 +82,6 @@ def read(output=None):
         if output is not None:
             output.write("{:1.3f},{:d}\n".format(t, adcvalue))
 
-    except Exception as e:
-        print(e)
 
 if __name__ == '__main__':
     args = docopt(__doc__)
@@ -85,7 +92,7 @@ if __name__ == '__main__':
     num_skip = int(args['--skiplines'])
 
     try:
-        arduino = serial.Serial(args['<device>'], args['<baud>'])
+        arduino = serial.Serial(args['<device>'], args['<baud>'], timeout=0.005)
     except Exception as e:
         raise IOError('connection to arduino failed with error: \n\n', e)
 
