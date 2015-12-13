@@ -41,7 +41,7 @@ def init_plot():
     ax.set_yticks([0, 256, 512, 768, 1024])
     ax.set_ylabel(r'adc value')
     ax.set_xlabel('$t$ / s')
-    ax.legend(loc='upper center', ncol=4)
+    ax.legend(loc='upper center', ncol=len(channels))
     ax.grid()
     fig.tight_layout()
 
