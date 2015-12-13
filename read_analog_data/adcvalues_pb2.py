@@ -18,7 +18,7 @@ _sym_db = _symbol_database.Default()
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='adcvalues.proto',
   package='',
-  serialized_pb=_b('\n\x0f\x61\x64\x63values.proto\">\n\nSerialData\x12\x0c\n\x04time\x18\x01 \x02(\x04\x12\x10\n\x08unixtime\x18\x02 \x02(\r\x12\x10\n\x08\x61\x64\x63value\x18\x03 \x02(\r')
+  serialized_pb=_b('\n\x0f\x61\x64\x63values.proto\"R\n\nSerialData\x12\x0c\n\x04time\x18\x01 \x02(\x04\x12\x0c\n\x04\x61\x64\x63\x30\x18\x02 \x02(\r\x12\x0c\n\x04\x61\x64\x63\x31\x18\x03 \x02(\r\x12\x0c\n\x04\x61\x64\x63\x32\x18\x04 \x02(\r\x12\x0c\n\x04\x61\x64\x63\x33\x18\x05 \x02(\r')
 )
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -40,15 +40,29 @@ _SERIALDATA = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='unixtime', full_name='SerialData.unixtime', index=1,
+      name='adc0', full_name='SerialData.adc0', index=1,
       number=2, type=13, cpp_type=3, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='adcvalue', full_name='SerialData.adcvalue', index=2,
+      name='adc1', full_name='SerialData.adc1', index=2,
       number=3, type=13, cpp_type=3, label=2,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='adc2', full_name='SerialData.adc2', index=3,
+      number=4, type=13, cpp_type=3, label=2,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='adc3', full_name='SerialData.adc3', index=4,
+      number=5, type=13, cpp_type=3, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -65,7 +79,7 @@ _SERIALDATA = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=19,
-  serialized_end=81,
+  serialized_end=101,
 )
 
 DESCRIPTOR.message_types_by_name['SerialData'] = _SERIALDATA

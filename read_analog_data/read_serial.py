@@ -9,7 +9,9 @@ Options:
     --storage=<N>    How many entries to store in total [default: 5000]
     --interval=<N>   Update interval for the plot in milliseconds, [default: 20]
     --out=<file>     Outputfile
-    --skiplines=<N>  how many lines to skip before starting plot [default: 100]
+    --skiplines=<N>  how many lines to skip before starting plot [default: 200]
+    --channels=<C>   Which channels to plot, comma separated [default: 0]
+    --every=<N>      Plot only every Nth point [default: 1]
 '''
 from __future__ import division, print_function
 from matplotlib.style import use
@@ -25,34 +27,44 @@ from adcvalues_pb2 import SerialData
 from ringbuffer import Buffer
 import numpy as np
 
+csv_row = "{t:1.3f},{data.adc0:d},{data.adc1:d},{data.adc2:d},{data.adc3:d}\n"
+
 
 def init_plot():
     fig, ax = plt.subplots()
     ax.autoscale(False)
 
-    adc_curve, = ax.plot([], [], '-', label='A0')
+    lines = {}
+    for c in channels:
+        lines[c], = ax.plot([], [], '-', label=str(c))
     ax.set_ylim(-50, 1100)
     ax.set_yticks([0, 256, 512, 768, 1024])
     ax.set_ylabel(r'adc value')
     ax.set_xlabel('$t$ / s')
-    ax.legend(bbox_to_anchor=(0.5, 1.02), loc='center')
+    ax.legend(loc='upper center', ncol=4)
     ax.grid()
     fig.tight_layout()
 
-    return fig, ax, adc_curve
+    return fig, ax, lines
 
 
 def updatefig(x):
     for i in range(buffer_size):
         read(output)
+
     mask = ~np.isnan(ts.data)
-    adc_curve.set_data(ts.data[mask], signal.data[mask])
+    for c in channels:
+        lines[c].set_data(
+            ts.data[mask][::plotstep],
+            signal[c].data[mask][::plotstep],
+        )
+
     if len(ts) > 2:
         lower = ts[mask][0]
         upper = ts[mask][-1]
         ax.set_xlim(lower, upper + 0.1 * (upper - lower))
 
-    return adc_curve
+    return lines
 
 
 def read(output=None):
@@ -67,20 +79,19 @@ def read(output=None):
         try:
             data.ParseFromString(line)
             success = True
-        except Exception as e:
-            line = arduino.readline().rstrip()
-            print(e)
+        except Exception:
+            line = arduino.readline()
     else:
         t = data.time / 1000
         if t == 0:
             return
-        adcvalue = data.adcvalue
 
-        signal.fill(adcvalue)
+        for c in channels:
+            signal[c].fill(getattr(data, 'adc{}'.format(c)))
         ts.fill(t)
 
         if output is not None:
-            output.write("{:1.3f},{:d}\n".format(t, adcvalue))
+            output.write(csv_row.format(t=t, data=data))
 
 
 if __name__ == '__main__':
@@ -91,6 +102,9 @@ if __name__ == '__main__':
     interval = int(args['--interval'])
     num_skip = int(args['--skiplines'])
 
+    channels = [int(c) for c in args['--channels'].split(',')]
+    plotstep = int(args['--every'])
+
     try:
         arduino = serial.Serial(args['<device>'], args['<baud>'], timeout=0.005)
     except Exception as e:
@@ -100,13 +114,13 @@ if __name__ == '__main__':
     for i in range(num_skip):
         _ = arduino.readline(20)
 
-    fig, ax, adc_curve = init_plot()
+    fig, ax, lines = init_plot()
     ts = Buffer(storage_size)
-    signal = Buffer(storage_size)
+    signal = {c: Buffer(storage_size) for c in channels}
 
     if args['--out'] is not None:
         output = open(args['--out'], 'w')
-        output.write('t,ADC0\n')
+        output.write('t,adc0,adc1,adc2,adc3\n')
     else:
         output = None
 

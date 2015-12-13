@@ -7,6 +7,7 @@ class Buffer():
         self.data = np.empty(length, dtype=dtype)
         if empty is not None:
             self.data[:] = empty
+        self.empty = empty
 
     def fill(self, new_data):
         new_data = np.array(new_data, copy=False, ndmin=1)
@@ -30,4 +31,4 @@ class Buffer():
         self.data[key] = value
 
     def __len__(self):
-        return self.data.shape[0]
+        return np.sum(self.data != self.empty)

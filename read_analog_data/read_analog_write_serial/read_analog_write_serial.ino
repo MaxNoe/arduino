@@ -1,12 +1,15 @@
-#include <Time.h>
 #include <pb.h>
 #include <pb_encode.h>
 #include <adcvalues.pb.h>
 
-unsigned short sensorValue0;
+unsigned int adc0;
+unsigned int adc1;
+unsigned int adc2;
+unsigned int adc3;
 unsigned long runtime;
-unsigned int unixtime;
 
+
+  
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
@@ -16,13 +19,14 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  sensorValue0 = analogRead(A0);
+  adc0 = analogRead(A0);
+  adc1 = analogRead(A1);
+  adc2 = analogRead(A2);
+  adc3 = analogRead(A3);
   runtime = millis();
-  unixtime = now();
   
-  SerialData message = {runtime, unixtime, sensorValue0};
-  
-  uint8_t buffer[16];
+  SerialData message = {runtime, adc0, adc1, adc2, adc3};
+  uint8_t buffer[32];
   pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
   pb_encode(&stream, SerialData_fields, &message);
   for(int i=0; i < stream.bytes_written; i++){
@@ -30,3 +34,4 @@ void loop() {
   }
   Serial.write("\n");
  }
+
