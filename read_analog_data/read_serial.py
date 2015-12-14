@@ -59,7 +59,7 @@ def updatefig(x):
             signal[c].data[mask][::plotstep],
         )
 
-    if len(ts) > 2:
+    if len(ts[mask]) > 2:
         lower = ts[mask][0]
         upper = ts[mask][-1]
         ax.set_xlim(lower, upper + 0.1 * (upper - lower))
