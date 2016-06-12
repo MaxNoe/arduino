@@ -18,6 +18,7 @@ _sym_db = _symbol_database.Default()
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='adcvalues.proto',
   package='',
+  syntax='proto2',
   serialized_pb=_b('\n\x0f\x61\x64\x63values.proto\"R\n\nSerialData\x12\x0c\n\x04time\x18\x01 \x02(\x04\x12\x0c\n\x04\x61\x64\x63\x30\x18\x02 \x02(\r\x12\x0c\n\x04\x61\x64\x63\x31\x18\x03 \x02(\r\x12\x0c\n\x04\x61\x64\x63\x32\x18\x04 \x02(\r\x12\x0c\n\x04\x61\x64\x63\x33\x18\x05 \x02(\r')
 )
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -75,6 +76,7 @@ _SERIALDATA = _descriptor.Descriptor(
   ],
   options=None,
   is_extendable=False,
+  syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
