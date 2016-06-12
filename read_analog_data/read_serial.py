@@ -81,17 +81,17 @@ def read(output=None):
             success = True
         except Exception:
             line = arduino.readline()
-    else:
-        t = data.time / 1000
-        if t == 0:
-            return
 
-        for c in channels:
-            signal[c].fill(getattr(data, 'adc{}'.format(c)))
-        ts.fill(t)
+    t = data.time / 1000
+    if t == 0:
+        return
 
-        if output is not None:
-            output.write(csv_row.format(t=t, data=data))
+    for c in channels:
+        signal[c].fill(getattr(data, 'adc{}'.format(c)))
+    ts.fill(t)
+
+    if output is not None:
+        output.write(csv_row.format(t=t, data=data))
 
 
 if __name__ == '__main__':
